@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- JQUERYの設定 -->
+  <script       src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous"></script>
+  <title>Document</title>
+</head>
+<body>
+  症状が気になるのは身体のどのパーツですか？<input type="number" class="" id="body" min="0" max="5"><br>
+  部位名：<p id="body_name"></p>
+  ID：<p id="body_id"></p>
+  <br>
+  <button id="next1" value="次へ"></button><br>
+  具体的にはどの部位ですか？<input type="number" class="" id="location" min="0" max="4"><br>
+  部位名：<p id="location_name"></p>
+  ID：<p id="location_id"></p>
+  <br>
+    <div>
+      <input type="radio" id="man" name="gender" value="man" checked>
+      <label for="man">Man</label>
+    </div>
+    <div>
+      <input type="radio" id="woman" name="gender" value="woman">
+      <label for="woman">Woman</label>
+    </div>
+    <div>
+      <input type="radio" id="boy" name="gender" value="boy">
+      <label for="boy">Boy</label>
+    </div>
+    <div>
+      <input type="radio" id="girl" name="gender" value="girl">
+      <label for="girl">Girl</label>
+    </div>  
+  <button id="next2" value="次へ"></button><br>
+  
+  具体的な症状は？<input type="number" class="" id="sym" min="0" max="30"><br>
+  部位名：<p id="sym_name"></p>
+  ID：<p id="sym_id"></p>
+  <br>
+  生まれ年<input type="number" id="birth_year" value="1990">
+  <br>
+  <button id="next3" value="次へ"></button><br>
+  
+  病名候補①：<p id="diagnosis1"></p>
+  病名候補②：<p id="diagnosis2"></p>
+  病名候補③：<p id="diagnosis3"></p>
+
+</body>
+
+<script>
+
+function callAPI1 (){
+    fetch(
+      "https://priaid-symptom-checker-v1.p.rapidapi.com/body/locations?language=en-gb", {
+        "method": "GET",
+        "headers": {
+          "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+          "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+          }
+      })
+    .then(function(res) {
+      return res.json();
+    })
+    .then(function(data) {
+      console.log(data);
+      // 選択肢で選ぶと、APIからリクエストした配列からデータを取得、HTMLで書き出し
+      $('#body').change(function(){
+        $('#body_name').html(data[$('#body').val()].Name);
+        $('#body_id').html(data[$('#body').val()].ID);
+      })
+      // HTML内のBodyで選んだID名を使って、LocationをAPIからリクエスト
+      $('#next1').on('click', function(){
+        const url2Beg = "https://priaid-symptom-checker-v1.p.rapidapi.com/body/locations/";
+        // URLの生成に既入力内容を使用
+        let bodyId = data[$('#body').val()].ID;
+        let url2Body = bodyId;
+        const url2Last = "?language=en-gb";
+        const URL2 = url2Beg + url2Body + url2Last;
+        console.log(URL2);
+        // 生成したURLでBody LocationのAPIを叩く
+        fetch(URL2,{
+          "method": "GET",
+	        "headers": {
+            "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+            "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+	        }
+        })
+        .then(function(res2) {
+          return res2.json();
+        })
+        .then(function(data2){
+          console.log(data2);
+          // 番号を選ぶとAPIからリクエストしたBody Locationを選ぶ
+          $('#location').change(function(){
+            $('#location_name').html(data2[$('#location').val()].Name);
+            $('#location_id').html(data2[$('#location').val()].ID);
+            // ロケーションのID名、選択されたGenderからsymptomsを取得するAPIのURLを生成
+            $('#next2').on('click', function(){
+              const url3Beg = "https://priaid-symptom-checker-v1.p.rapidapi.com/symptoms/";
+              let url3Location = data2[$('#location').val()].ID;
+              let url3Gender = $('input:radio[name="gender"]').val();
+              let url3Last = "?language=en-gb"
+              const URL3 = url3Beg + url3Location + '/' + url3Gender + url3Last;
+              console.log(URL3);
+              fetch(URL3,{
+                "method": "GET",
+                "headers": {
+                  "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+                  "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+              }
+              })
+              .then(function(res2) {
+                return res2.json();
+              })
+              .then(function(data3){
+                console.log(data3);
+                // 番号でAPIからリクエストしたSymptonを選ぶ
+                $('#sym').change(function(){
+                  $('#sym_name').html(data3[$('#sym').val()].Name);
+                  $('#sym_id').html(data3[$('#sym').val()].ID);
+                // 選んだSymptonと生まれ年から、あり得る症状ベストが出る
+                  $('#next3').on('click', function(){
+                    const url4Beg = "https://priaid-symptom-checker-v1.p.rapidapi.com/diagnosis?gender=male&year_of_birth=";
+                    let url4Year = $('#birth_year').val()
+                    let url4Sym = data3[$('#sym').val()].ID;
+                    let url4Last = "%5D&language=en-gb"
+                    const URL4 = url4Beg + url4Year + '&&symptoms=%5B' + url4Sym + url4Last;
+                    console.log(URL4);
+                    fetch(URL4,{
+                    "method": "GET",
+                    "headers": {
+                       "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+                       "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+                    }
+                    })
+                    .then(function(res3) {
+                      return res3.json();
+                    })
+                    .then(function(data4){
+                      console.log(data4[0].Issue.Name);
+                      $('#diagnosis1').html(data4[0].Issue.Name);
+                      $('#diagnosis2').html(data4[1].Issue.Name);
+                      $('#diagnosis3').html(data4[2].Issue.Name);
+                      })
+    })
+  })})})})})})})}
+  callAPI1(); 
+
+
+  // BodyPartのAPI連携
+  // const settings = {
+  //   "async": true,
+  //   "crossDomain": true,
+  //   "url": "https://priaid-symptom-checker-v1.p.rapidapi.com/body/locations?language=en-gb",
+  //   "method": "GET",
+  //   "headers": {
+  //     "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+  //     "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+  //     }
+  //   };  
+  // Bodyを番号で指定、APIから⇒HTMLで書き出し
+  // let json_data = (
+  // $.ajax(settings).done(function (response_body) {
+	//   console.log(response_body);
+  //   $('#body').change(function(){
+  //   $('#body_name').html(response_body[$('#body').val()].Name);
+  //   $('#body_id').html(response_body[$('#body').val()].ID);
+  //   });
+  //   // Bodyで選んだID名を使って、LocationをAPIからリクエスト、HTMLで書き出し
+  //   $('#next1').on('click', function(){
+  //   const url2Beg = "https://priaid-symptom-checker-v1.p.rapidapi.com/body/locations/";
+  //   // URLの生成に既入力内容を使用
+  //   let bodyId = response_body[$('#body').val()].ID;
+  //   let url2Body = bodyId;
+  //   const url2Last = "?language=en-gb";
+  //   const URL2 = url2Beg + url2Body + url2Last;
+  //   console.log(URL2);
+  //   const settings2 = {
+  //     "async": true,
+  //     "crossDomain": true,
+  //     "url": URL,
+  //     "method": "GET",
+  //     "headers": {
+  //       "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+  //       "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+  //     }
+  //   };
+  //   $.ajax(settings2).done(function (response_location) {
+  //     console.log(response_location);
+  //     $('#location').change(function(){
+  //     $('#location_name').html(response_location[$('#location').val()].Name);
+  //     $('#location_id').html(response_location[$('#location').val()].ID); 
+
+  // Locationで選んだID名を使って、symptomsをAPIからリクエスト、HTMLで書き出し
+  // $('#next2').on('click', function(){
+  // const url3Beg = "https://priaid-symptom-checker-v1.p.rapidapi.com/symptoms/";
+  // let url3Location = response_location[$('#location').val()].ID;
+  // let url3Gender = $('input:radio[name="gender"]').val();
+  // let url3Last = "?language=en-gb"
+  // const URL3 = url3Beg + url3Location + url3Gender + url3Last;
+  // console.log(URL3);
+  // const settings3 = {
+  //     "async": true,
+	//     "crossDomain": true,
+	//     "url": URL3,
+	//     "method": "GET",
+	//     "headers": {
+  //     "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+  //     "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+	//     }}
+  // $.ajax(settings).done(function (response) {
+	// console.log(response);
+  // });
+
+  // });
+
+
+  // setTimeout( function () {
+  //   if(json_data != null){
+  //     console.log(json_data)
+  //     console.log(json_data.responseJSON)
+  //   }else{
+  //     setTimeout(arguments.callee,100);
+  //   }});
+    
+  // Bodyで選んだID名を使って、LocationをAPIからリクエスト、HTMLで書き出し
+  //  $('#next1').on('click', function(){
+  //   const urlBeg = "https://priaid-symptom-checker-v1.p.rapidapi.com/body/locations/";
+  //   // URLの生成に既入力内容を使用
+  //   console.log($('').val());n
+  //   let urlBody = $('#body_id').val();
+  //   const urlLas = "?language=en-gb";
+  //   const URL = urlBeg + urlBody + urlLas;
+  //   console.log(URL);
+  //   const settings2 = {
+  //     "async": true,
+  //     "crossDomain": true,
+  //     "url": URL,
+  //     "method": "GET",
+  //     "headers": {
+  //       "x-rapidapi-key": "6560d905c0msh2597a8141ce563ep149730jsnd0e6b0055005",
+  //       "x-rapidapi-host": "priaid-symptom-checker-v1.p.rapidapi.com"
+  //     }
+  //   };
+  //   $.ajax(settings2).done(function (response_location) {
+  //     console.log(response_location);
+  //     $('#location').change(function(){
+  //     $('#location_name').html(response_location[$('#location').val()].Name)
+  //     $('#location_id').html(response_location[$('#location').val()].ID)      
+  //   });
+  // })})
+  
+</script>
+
+</html>
